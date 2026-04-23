@@ -1,0 +1,15 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* в тёмной теме #root и html получают color-scheme из MUI; курсор по полям ввода остаётся читаемым */
+  cursor: default;
+}
+
+* {
+  box-sizing: border-box;
+}

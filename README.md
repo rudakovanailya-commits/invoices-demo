@@ -127,6 +127,17 @@ npm run preview   # локальная проверка dist/
 
 Статику из `dist/` можно раздавать через любой хостинг (Netlify, Vercel, Cloudflare Pages и т.д.). Укажите те же переменные `VITE_*` в настройках сборки.
 
+### Почему на GitHub Pages пусто / не грузятся стили (белая страница)
+
+1. **Неверный `base` у Vite.** Сайт открывается как `https://user.github.io/имя-репо/`, а скрипты ищутся в `https://user.github.io/assets/...` — 404.  
+   В репозитории используется `VITE_BASE_PATH` при сборке (см. `vite.config.ts` и workflow `.github/workflows/pages.yml`).
+
+2. **Не включён деплой через Actions:** **Settings → Pages → Build and deployment → Source: GitHub Actions** (не «Deploy from a branch» без workflow).
+
+3. **Нет секретов Supabase** при сборке в CI: **Settings → Secrets and variables → Actions** — добавьте `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY` (как в `.env.example`).
+
+4. **Сайт в корне** (`username.github.io`): в **Settings → Variables** задайте `VITE_BASE_PATH` = `/` (один слэш).
+
 ## Примечания
 
 - Категория по умолчанию при пустом вводе — «Прочее» (`SubmitInvoice.tsx`).

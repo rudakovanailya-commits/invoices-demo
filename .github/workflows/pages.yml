@@ -6,7 +6,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, develop]
   workflow_dispatch:
 
 permissions:
@@ -33,11 +33,14 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
           REPO_NAME: ${{ github.event.repository.name }}
+          # если задать в Settings → Variables, иначе пусто и подставится /repo/
+          VITE_BASE_PATH_INPUT: ${{ vars.VITE_BASE_PATH }}
         run: |
-          if [ -n "${{ vars.VITE_BASE_PATH }}" ]; then
-            export VITE_BASE_PATH="${{ vars.VITE_BASE_PATH }}"
+          set -e
+          if [ -n "$VITE_BASE_PATH_INPUT" ]; then
+            export VITE_BASE_PATH="$VITE_BASE_PATH_INPUT"
           else
-            export VITE_BASE_PATH="/$REPO_NAME/"
+            export VITE_BASE_PATH="/${REPO_NAME}/"
           fi
           echo "VITE_BASE_PATH=$VITE_BASE_PATH"
           npm run build

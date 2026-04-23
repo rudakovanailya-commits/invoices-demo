@@ -138,6 +138,10 @@ npm run preview   # локальная проверка dist/
 
 4. **Сайт в корне** (`username.github.io`): в **Settings → Variables** задайте `VITE_BASE_PATH` = `/` (один слэш).
 
+5. **Workflow не запускался или красный крестик в Actions:** откройте **Actions** → последний запуск **Deploy to GitHub Pages** → лог шага **Build**. Часто: пуш не в ветку `main`/`master`/`develop` (в workflow перечислены эти ветки), нет `package-lock.json` в репозитории, первый деплой ждёт одобрения в **Settings → Environments → github-pages**.
+
+6. **Репозиторий только на компьютере** — пока нет `git push` на GitHub, сайт там не появится.
+
 ## Примечания
 
 - Категория по умолчанию при пустом вводе — «Прочее» (`SubmitInvoice.tsx`).

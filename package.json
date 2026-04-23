@@ -2,6 +2,11 @@
   "name": "invoices-demo",
   "private": true,
   "version": "0.0.0",
+  "description": "Учёт входящих счетов: React, MUI, Supabase (Storage + Postgres)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_USERNAME/invoices-demo.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

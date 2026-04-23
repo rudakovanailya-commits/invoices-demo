@@ -1,9 +1,26 @@
-# Прототип: учет входящих счетов (Supabase + Storage)
+# Прототип: учёт входящих счетов (Supabase + Storage)
 
 Минимальный прототип без авторизации:
 
-- **Сотрудник**: загружает счет (PDF/JPG/PNG) + сумма + статья + комментарий.
-- **Бухгалтер**: видит список, открывает файл, меняет статус (`new/approved/rejected`).
+- **Сотрудник**: загружает счёт (PDF/JPG/PNG) + сумма + категория + комментарий.
+- **Бухгалтер** (после входа по паролю в UI): список, открытие файла, статусы `new` → `done` / `paid`, комментарий бухгалтера (если есть колонка в БД).
+
+## Клонирование и публикация на GitHub
+
+1. Создайте пустой репозиторий на GitHub (без README, если уже есть проект локально).
+2. В каталоге `invoices-demo`:
+
+```bash
+git init
+git add .
+git commit -m "Initial commit: invoices-demo"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/invoices-demo.git
+git push -u origin main
+```
+
+3. В `package.json` замените `YOUR_USERNAME` в поле `repository.url` на свой логин или удалите блок `repository`, если не нужен.
+4. **Не коммитьте** `.env.local` и секреты — они в `.gitignore`. В репозитории только `.env.example`.
 
 ## Локальный запуск
 
@@ -55,6 +72,12 @@ create table if not exists public.expenses (
 alter table public.expenses add column if not exists file_name text;
 ```
 
+Опционально, если используете комментарий бухгалтера из UI:
+
+```sql
+alter table public.expenses add column if not exists accountant_comment text;
+```
+
 В Storage путь к файлу — только латиница/UUID; **человекочитаемое имя** хранится в `file_name`.
 
 ### 2) Storage bucket `invoices`
@@ -95,7 +118,17 @@ using (true)
 with check (true);
 ```
 
+## Сборка для продакшена
+
+```bash
+npm run build
+npm run preview   # локальная проверка dist/
+```
+
+Статику из `dist/` можно раздавать через любой хостинг (Netlify, Vercel, Cloudflare Pages и т.д.). Укажите те же переменные `VITE_*` в настройках сборки.
+
 ## Примечания
 
-- Категории расходов захардкожены в `src/screens/SubmitInvoice.tsx`.
-- Файл загружается в Storage `invoices`, затем в таблицу пишется `file_url` (public URL).
+- Категория по умолчанию при пустом вводе — «Прочее» (`SubmitInvoice.tsx`).
+- Файл в Storage `invoices`, в таблице — `file_url`, `file_name` и остальные поля.
+- Дубликаты по имени файла блокируются (см. логику в `SubmitInvoice.tsx`).

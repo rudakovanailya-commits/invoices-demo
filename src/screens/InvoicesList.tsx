@@ -13,7 +13,7 @@ import {
   MenuItem
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
-import * as XLSX from 'xlsx'
+import type { WorkSheet } from 'xlsx'
 
 const openLinkButtonSx = {
   cursor: 'pointer',
@@ -69,15 +69,16 @@ function expenseRowsForExport(data: Expense[]) {
   }))
 }
 
-function applySheetColumnWidths(worksheet: XLSX.WorkSheet) {
+function applySheetColumnWidths(worksheet: WorkSheet, xlsx: typeof import('xlsx')) {
+  const { utils } = xlsx
   const ref = worksheet['!ref']
   if (!ref) return
-  const range = XLSX.utils.decode_range(ref)
+  const range = utils.decode_range(ref)
   const cols: { wch: number }[] = []
   for (let c = range.s.c; c <= range.e.c; c++) {
     let maxLen = 10
     for (let r = range.s.r; r <= range.e.r; r++) {
-      const cell = worksheet[XLSX.utils.encode_cell({ r, c })]
+      const cell = worksheet[utils.encode_cell({ r, c })]
       const s = cell?.v != null ? String(cell.v) : ''
       if (s.length > maxLen) maxLen = s.length
     }
@@ -160,14 +161,15 @@ export default function InvoicesList() {
     URL.revokeObjectURL(url)
   }
 
-  function handleExportExcel() {
+  async function handleExportExcel() {
     if (!dataToExport || dataToExport.length === 0) {
       alert('Нет данных для выгрузки')
       return
     }
+    const XLSX = await import('xlsx')
     const rows = expenseRowsForExport(dataToExport)
     const worksheet = XLSX.utils.json_to_sheet(rows)
-    applySheetColumnWidths(worksheet)
+    applySheetColumnWidths(worksheet, XLSX)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Счета')
     XLSX.writeFile(workbook, 'expenses.xlsx')
@@ -214,7 +216,12 @@ export default function InvoicesList() {
           <Button variant="outlined" onClick={handleExport}>
             📥 Скачать CSV
           </Button>
-          <Button variant="outlined" onClick={handleExportExcel}>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              void handleExportExcel()
+            }}
+          >
             📥 Скачать Excel
           </Button>
         </Box>

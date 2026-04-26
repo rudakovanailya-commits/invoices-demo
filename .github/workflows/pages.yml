@@ -28,6 +28,12 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Проверка секретов Supabase (без них сайт падает при загрузке)
+        run: |
+          if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ] || [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
+            echo "::error::В Settings → Secrets and variables → Actions задайте непустые VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY"
+            exit 1
+          fi
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

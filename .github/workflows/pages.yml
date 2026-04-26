@@ -1,7 +1,9 @@
-# GitHub: Settings → Pages → Source: GitHub Actions
-# Secrets (Actions): VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-# Variable VITE_BASE_PATH: только для site username.github.io → "/".
-# Для project pages (…/invoices-demo/) оставьте пусто — иначе скрипты пойдут в /assets/ вместо /repo/assets/ (MIME/404).
+# Деплой только через GitHub Actions (официальный артефакт → Pages).
+#
+# Обязательно в репозитории: Settings → Pages → Build and deployment
+#   → Source: GitHub Actions  (НЕ «Deploy from a branch» — иначе отдаётся исходник, MIME/404)
+#
+# Secrets → Actions: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (для сборки Vite)
 
 name: Deploy to GitHub Pages
 
@@ -24,47 +26,46 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-      - run: npm ci
-      - name: Проверка секретов Supabase (без них сайт падает при загрузке)
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Проверка секретов Supabase
         run: |
           if [ -z "${{ secrets.VITE_SUPABASE_URL }}" ] || [ -z "${{ secrets.VITE_SUPABASE_ANON_KEY }}" ]; then
-            echo "::error::В Settings → Secrets and variables → Actions задайте непустые VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY"
+            echo "::error::Добавьте в Settings → Secrets → Actions: VITE_SUPABASE_URL и VITE_SUPABASE_ANON_KEY"
             exit 1
           fi
+
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          REPO_NAME: ${{ github.event.repository.name }}
-          # если задать в Settings → Variables, иначе пусто и подставится /repo/
-          VITE_BASE_PATH_INPUT: ${{ vars.VITE_BASE_PATH }}
+        run: npm run build
+
+      - name: Проверка dist (index + base /invoices-demo/)
         run: |
           set -e
-          if [ -n "$VITE_BASE_PATH_INPUT" ]; then
-            export VITE_BASE_PATH="$VITE_BASE_PATH_INPUT"
-          else
-            export VITE_BASE_PATH="/${REPO_NAME}/"
-          fi
-          echo "VITE_BASE_PATH=$VITE_BASE_PATH"
-          npm run build
-      - name: Проверка dist (только bundle, не src/main.*)
-        run: |
-          set -e
-          if grep -qE 'src/main\.(tsx|jsx|ts|js)"' dist/index.html; then
-            echo 'ERROR: dist/index.html ссылается на исходник entry вместо /assets/ — публикация даст MIME error' >&2
-            cat dist/index.html
-            exit 1
-          fi
-          if ! grep -q '/assets/' dist/index.html; then
-            echo 'ERROR: в dist/index.html нет ссылок на /assets/ (сборка или base неверны)' >&2
-            cat dist/index.html
-            exit 1
-          fi
+          test -f dist/index.html
           test -f dist/.nojekyll
+          if grep -qE 'src/main\.(tsx|jsx|ts|js)"' dist/index.html; then
+            echo 'ERROR: в dist не должно быть ссылки на src/main — только production bundle' >&2
+            cat dist/index.html
+            exit 1
+          fi
+          if ! grep -q '"/invoices-demo/assets/' dist/index.html; then
+            echo 'ERROR: в dist/index.html ожидаются пути "/invoices-demo/assets/..." (проверьте base в vite.config.ts)' >&2
+            cat dist/index.html
+            exit 1
+          fi
+          echo "OK — head dist/index.html:"
+          head -20 dist/index.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

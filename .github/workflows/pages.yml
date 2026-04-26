@@ -1,6 +1,7 @@
 # GitHub: Settings → Pages → Source: GitHub Actions
 # Secrets (Actions): VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
-# Variable VITE_BASE_PATH: для репо username.github.io укажите / , иначе оставьте пустым (будет /имя-репо/)
+# Variable VITE_BASE_PATH: только для site username.github.io → "/".
+# Для project pages (…/invoices-demo/) оставьте пусто — иначе скрипты пойдут в /assets/ вместо /repo/assets/ (MIME/404).
 
 name: Deploy to GitHub Pages
 

@@ -124,10 +124,18 @@ export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: I
   }, [])
 
   async function loadData() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('expenses')
       .select('*')
       .order('created_at', { ascending: false })
+
+    // Временно: в Console смотрите EXPENSES DATA — в каждом объекте должно быть поле status
+    // eslint-disable-next-line no-console
+    console.log('EXPENSES DATA:', data)
+    if (error) {
+      // eslint-disable-next-line no-console
+      console.log('EXPENSES ERROR:', error)
+    }
 
     if (data) setItems(data)
   }

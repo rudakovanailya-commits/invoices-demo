@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppBar,
   Badge,
@@ -31,6 +31,7 @@ type TabKey = 'submit' | 'list' | 'users'
 function App() {
   const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('isAdmin') === 'true')
   const [tab, setTab] = useState<TabKey>('submit')
+  const prevTabRef = useRef<TabKey | null>(null)
   const [hasNewInvoices, setHasNewInvoices] = useState(false)
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
     const saved = localStorage.getItem('theme_mode')
@@ -55,6 +56,20 @@ function App() {
       setTab('list')
     }
   }, [isAdmin, tab])
+
+  /* Уход со страницы «Отправить счёт» → сброс режима бухгалтера (отдельно от пользовательской зоны) */
+  useEffect(() => {
+    if (prevTabRef.current === null) {
+      prevTabRef.current = tab
+      return
+    }
+    const prev = prevTabRef.current
+    if (prev === 'submit' && tab !== 'submit') {
+      localStorage.removeItem('isAdmin')
+      setIsAdmin(false)
+    }
+    prevTabRef.current = tab
+  }, [tab])
 
   useEffect(() => {
     const onRefresh = () => {
@@ -178,6 +193,7 @@ function App() {
                 localStorage.setItem('isAdmin', 'true')
                 setIsAdmin(true)
               }}
+              onAdminLogout={logoutAdmin}
             />
           ) : (
             <Suspense fallback={<Typography sx={{ p: 2 }}>Загрузка…</Typography>}>

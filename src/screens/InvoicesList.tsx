@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Alert,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { WorkSheet } from 'xlsx'
@@ -96,9 +97,10 @@ const ADMIN_PASSWORD = '1234'
 type InvoicesListProps = {
   isAdmin: boolean
   onAdminLogin: () => void
+  onAdminLogout: () => void
 }
 
-export default function InvoicesList({ isAdmin, onAdminLogin }: InvoicesListProps) {
+export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: InvoicesListProps) {
   const [items, setItems] = useState<Expense[]>([])
   const [loginOpen, setLoginOpen] = useState(false)
   const [loginPassword, setLoginPassword] = useState('')
@@ -272,31 +274,45 @@ export default function InvoicesList({ isAdmin, onAdminLogin }: InvoicesListProp
         </Box>
       </Box>
 
-      <Button
-        variant="outlined"
-        size="small"
-        color={isAdmin ? 'success' : 'primary'}
-        disabled={isAdmin}
-        onClick={() => setLoginOpen(true)}
-        title={
-          isAdmin
-            ? 'Сессия бухгалтера активна. Выйдите кнопкой «Выйти» в шапке страницы'
-            : undefined
-        }
-        sx={(theme) => ({
-          alignSelf: 'flex-start',
-          transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-          ...(!isAdmin && {
+      {isAdmin ? (
+        <Alert
+          severity="success"
+          variant="outlined"
+          sx={{
+            alignItems: 'center',
+            borderWidth: 2,
+            fontWeight: 500,
+            '& .MuiAlert-icon': { fontSize: 28 },
+          }}
+          action={
+            <Button color="success" size="small" variant="contained" onClick={onAdminLogout}>
+              Выйти из режима
+            </Button>
+          }
+        >
+          Режим бухгалтера включён — доступны кнопки по счетам и комментарии.
+        </Alert>
+      ) : (
+        <Button
+          variant="contained"
+          color="primary"
+          size="medium"
+          onClick={() => setLoginOpen(true)}
+          sx={(theme) => ({
+            alignSelf: 'stretch',
+            maxWidth: 360,
+            py: 1.25,
+            fontWeight: 700,
+            fontSize: '1rem',
+            boxShadow: theme.shadows[4],
             '&:hover': {
-              transform: 'scale(1.03)',
-              boxShadow: theme.shadows[6],
+              boxShadow: theme.shadows[8],
             },
-            '&:active': { transform: 'scale(0.99)' },
-          }),
-        })}
-      >
-        {isAdmin ? 'Вход для бухгалтера (активен)' : 'Вход для бухгалтера'}
-      </Button>
+          })}
+        >
+          Вход для бухгалтера
+        </Button>
+      )}
 
       {filteredItems.map((item) => (
         <Card

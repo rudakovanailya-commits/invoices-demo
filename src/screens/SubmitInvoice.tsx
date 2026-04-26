@@ -61,6 +61,7 @@ export default function SubmitInvoice() {
         amount.trim() !== '' && Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
       const safeCategory = category.trim() || 'Прочее'
 
+      // Новый счёт всегда 'new' (подсветка вкладки «Счета», count по status) — не in_progress
       const { error: insertError } = await supabase
         .from('expenses')
         .insert({
@@ -69,7 +70,7 @@ export default function SubmitInvoice() {
           amount: safeAmount,
           category: safeCategory,
           comment: comment.trim() || null,
-          status: 'new'
+          status: 'new',
         })
 
       if (insertError) throw insertError

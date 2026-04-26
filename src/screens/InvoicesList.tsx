@@ -272,24 +272,31 @@ export default function InvoicesList({ isAdmin, onAdminLogin }: InvoicesListProp
         </Box>
       </Box>
 
-      {!isAdmin && (
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={() => setLoginOpen(true)}
-          sx={(theme) => ({
-            transition: 'transform 0.22s ease, box-shadow 0.22s ease',
-            alignSelf: 'flex-start',
+      <Button
+        variant="outlined"
+        size="small"
+        color={isAdmin ? 'success' : 'primary'}
+        disabled={isAdmin}
+        onClick={() => setLoginOpen(true)}
+        title={
+          isAdmin
+            ? 'Сессия бухгалтера активна. Выйдите кнопкой «Выйти» в шапке страницы'
+            : undefined
+        }
+        sx={(theme) => ({
+          alignSelf: 'flex-start',
+          transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+          ...(!isAdmin && {
             '&:hover': {
               transform: 'scale(1.03)',
               boxShadow: theme.shadows[6],
             },
             '&:active': { transform: 'scale(0.99)' },
-          })}
-        >
-          Вход для бухгалтера
-        </Button>
-      )}
+          }),
+        })}
+      >
+        {isAdmin ? 'Вход для бухгалтера (активен)' : 'Вход для бухгалтера'}
+      </Button>
 
       {filteredItems.map((item) => (
         <Card

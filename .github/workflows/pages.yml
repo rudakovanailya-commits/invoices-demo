@@ -44,6 +44,20 @@ jobs:
           fi
           echo "VITE_BASE_PATH=$VITE_BASE_PATH"
           npm run build
+      - name: Проверка dist (только bundle, не src/main.*)
+        run: |
+          set -e
+          if grep -qE 'src/main\.(tsx|jsx|ts|js)"' dist/index.html; then
+            echo 'ERROR: dist/index.html ссылается на исходник entry вместо /assets/ — публикация даст MIME error' >&2
+            cat dist/index.html
+            exit 1
+          fi
+          if ! grep -q '/assets/' dist/index.html; then
+            echo 'ERROR: в dist/index.html нет ссылок на /assets/ (сборка или base неверны)' >&2
+            cat dist/index.html
+            exit 1
+          fi
+          test -f dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

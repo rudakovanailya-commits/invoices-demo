@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import {
   Box,
@@ -6,7 +6,11 @@ import {
   CardContent,
   Typography,
   Button,
-  TextField
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 
@@ -23,14 +27,25 @@ const openLinkButtonSx = {
   },
 } as const
 
+const accountantFieldSx = (t: { palette: { mode: 'light' | 'dark'; primary: { main: string } } }) => ({
+  '& .MuiOutlinedInput-root': {
+    transition: 'box-shadow 0.22s ease, border-color 0.22s ease',
+  },
+  '& .MuiOutlinedInput-root.Mui-focused': {
+    boxShadow: `0 0 0 3px ${alpha(t.palette.primary.main, 0.22)}`,
+  },
+})
+
 type Expense = {
   id: string
   file_url: string
   file_name: string | null
   amount: number | null
   category: string | null
+  subcategory?: string | null
   comment: string | null
   accountant_comment: string | null
+  company: string | null
   status: string
   created_at: string
 }
@@ -42,6 +57,20 @@ function notifyExpensesChanged() {
 export default function InvoicesList() {
   const [items, setItems] = useState<Expense[]>([])
   const [isAccountant, setIsAccountant] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState('')
+
+  const companies = useMemo(
+    () => [...new Set(items.map((i) => i.company).filter(Boolean) as string[])],
+    [items]
+  )
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        return !selectedCompany || item.company === selectedCompany
+      }),
+    [items, selectedCompany]
+  )
 
   useEffect(() => {
     loadData()
@@ -69,10 +98,89 @@ export default function InvoicesList() {
     notifyExpensesChanged()
   }
 
+  const dataToExport = filteredItems || items
+
+  function handleExport() {
+    if (!dataToExport.length) {
+      alert('Нет данных для выгрузки')
+      return
+    }
+    const rows = dataToExport.map((item) => ({
+      Дата: new Date(item.created_at).toLocaleString(),
+      Файл: item.file_name || '',
+      Категория: item.category || '',
+      Подкатегория: item.subcategory || '',
+      Компания: item.company || '',
+      Комментарий: item.comment || '',
+      'Комментарий бухгалтера': item.accountant_comment || '',
+      Статус: item.status || '',
+      Ссылка: item.file_url || '',
+    }))
+
+    const csv = [
+      Object.keys(rows[0]).join(','),
+      ...rows.map((row) =>
+        Object.values(row)
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(',')
+      ),
+    ].join('\n')
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', 'expenses.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
 
-      <Typography variant="h6">Список счетов</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Typography variant="h6">Список счетов</Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'stretch', sm: 'center' },
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel id="filter-company-label">Компания</InputLabel>
+            <Select
+              labelId="filter-company-label"
+              label="Компания"
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+            >
+              <MenuItem value="">Все</MenuItem>
+              {companies.map((c) => (
+                <MenuItem key={c} value={c}>
+                  {c}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="outlined" onClick={handleExport}>
+            📥 Скачать CSV
+          </Button>
+        </Box>
+      </Box>
 
       <Button
         variant="outlined"
@@ -93,7 +201,7 @@ export default function InvoicesList() {
         Вход для бухгалтера
       </Button>
 
-      {items.map((item) => (
+      {filteredItems.map((item) => (
         <Card
           key={item.id}
           sx={(t) => ({
@@ -188,25 +296,44 @@ export default function InvoicesList() {
                   borderColor: 'divider',
                 }}
               >
-                <TextField
-                  fullWidth
-                  label="Комментарий бухгалтера"
-                  defaultValue={item.accountant_comment || ''}
-                  onBlur={(e) => {
-                    supabase
-                      .from('expenses')
-                      .update({ accountant_comment: e.target.value })
-                      .eq('id', item.id)
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', md: 'row' },
+                    gap: 2,
                   }}
-                  sx={(t) => ({
-                    '& .MuiOutlinedInput-root': {
-                      transition: 'box-shadow 0.22s ease, border-color 0.22s ease',
-                    },
-                    '& .MuiOutlinedInput-root.Mui-focused': {
-                      boxShadow: `0 0 0 3px ${alpha(t.palette.primary.main, 0.22)}`,
-                    },
-                  })}
-                />
+                >
+                  <TextField
+                    fullWidth
+                    label="Компания"
+                    defaultValue={item.company || ''}
+                    onBlur={(e) => {
+                      const v = e.target.value.trim()
+                      supabase
+                        .from('expenses')
+                        .update({ company: v || null })
+                        .eq('id', item.id)
+                      setItems((prev) =>
+                        prev.map((x) =>
+                          x.id === item.id ? { ...x, company: v || null } : x
+                        )
+                      )
+                    }}
+                    sx={accountantFieldSx}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Комментарий бухгалтера"
+                    defaultValue={item.accountant_comment || ''}
+                    onBlur={(e) => {
+                      supabase
+                        .from('expenses')
+                        .update({ accountant_comment: e.target.value })
+                        .eq('id', item.id)
+                    }}
+                    sx={accountantFieldSx}
+                  />
+                </Box>
 
                 <Typography sx={{ mt: 2 }}>
                   Статус:{' '}

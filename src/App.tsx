@@ -5,9 +5,11 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Box,
+  Button,
   Container,
   CssBaseline,
   IconButton,
+  TextField,
   Toolbar,
   Typography,
 } from '@mui/material'
@@ -25,9 +27,13 @@ import { supabase } from './lib/supabaseClient'
 
 const UsersAdmin = lazy(() => import('./screens/UsersAdmin'))
 
+const ACCOUNTANT_PASSWORD = '1234'
+
 type TabKey = 'submit' | 'list' | 'users'
 
 function App() {
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [password, setPassword] = useState('')
   const [tab, setTab] = useState<TabKey>('submit')
   const [hasNewInvoices, setHasNewInvoices] = useState(false)
   const [mode, setMode] = useState<'light' | 'dark'>(() => {
@@ -45,8 +51,14 @@ function App() {
   }, [])
 
   useEffect(() => {
+    const saved = localStorage.getItem('isAdmin') === 'true'
+    setIsAdmin(saved)
+  }, [])
+
+  useEffect(() => {
+    if (!isAdmin) return
     void refreshNewInvoicesFlag()
-  }, [tab, refreshNewInvoicesFlag])
+  }, [tab, isAdmin, refreshNewInvoicesFlag])
 
   useEffect(() => {
     const onRefresh = () => {
@@ -123,6 +135,43 @@ function App() {
     })
   }
 
+  function handleLogin() {
+    if (password === ACCOUNTANT_PASSWORD) {
+      localStorage.setItem('isAdmin', 'true')
+      setIsAdmin(true)
+      setPassword('')
+    }
+  }
+
+  if (!isAdmin) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Container maxWidth="sm" sx={{ py: 4 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 360, mx: 'auto' }}>
+            <Typography component="h2" variant="h5">
+              Вход для бухгалтера
+            </Typography>
+            <TextField
+              type="password"
+              label="Пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleLogin()
+              }}
+              autoComplete="current-password"
+              fullWidth
+            />
+            <Button variant="contained" onClick={handleLogin}>
+              Войти
+            </Button>
+          </Box>
+        </Container>
+      </ThemeProvider>
+    )
+  }
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -132,6 +181,16 @@ function App() {
           <Typography variant="h6" sx={{ flex: 1, fontWeight: 800 }}>
             Учет входящих счетов
           </Typography>
+          <Button
+            color="inherit"
+            onClick={() => {
+              localStorage.removeItem('isAdmin')
+              setIsAdmin(false)
+            }}
+            sx={{ mr: 0.5 }}
+          >
+            Выйти
+          </Button>
           <IconButton
             onClick={toggleMode}
             aria-label="Переключить тему"

@@ -14,14 +14,16 @@ import {
 import { ThemeProvider, createTheme, alpha } from '@mui/material/styles'
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong'
 import ListAltIcon from '@mui/icons-material/ListAlt'
+import PeopleIcon from '@mui/icons-material/People'
 import DarkModeIcon from '@mui/icons-material/DarkMode'
 import LightModeIcon from '@mui/icons-material/LightMode'
 
 import SubmitInvoice from './screens/SubmitInvoice'
 import InvoicesList from './screens/InvoicesList'
+import UsersAdmin from './screens/UsersAdmin'
 import { supabase } from './lib/supabaseClient'
 
-type TabKey = 'submit' | 'list'
+type TabKey = 'submit' | 'list' | 'users'
 
 function App() {
   const [tab, setTab] = useState<TabKey>('submit')
@@ -146,7 +148,13 @@ function App() {
       </AppBar>
 
       <Container maxWidth="sm" sx={{ py: 2, pb: 10 }}>
-        {tab === 'submit' ? <SubmitInvoice /> : <InvoicesList />}
+        {tab === 'submit' ? (
+          <SubmitInvoice />
+        ) : tab === 'list' ? (
+          <InvoicesList />
+        ) : (
+          <UsersAdmin />
+        )}
       </Container>
 
       <Box
@@ -207,6 +215,7 @@ function App() {
                 </Badge>
               }
             />
+            <BottomNavigationAction label="Пользователи" value="users" icon={<PeopleIcon />} />
           </BottomNavigation>
         </Container>
       </Box>

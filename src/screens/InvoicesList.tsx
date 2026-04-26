@@ -10,7 +10,11 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
 import type { WorkSheet } from 'xlsx'
@@ -87,8 +91,17 @@ function applySheetColumnWidths(worksheet: WorkSheet, xlsx: typeof import('xlsx'
   worksheet['!cols'] = cols
 }
 
-export default function InvoicesList() {
+const ADMIN_PASSWORD = '1234'
+
+type InvoicesListProps = {
+  isAdmin: boolean
+  onAdminLogin: () => void
+}
+
+export default function InvoicesList({ isAdmin, onAdminLogin }: InvoicesListProps) {
   const [items, setItems] = useState<Expense[]>([])
+  const [loginOpen, setLoginOpen] = useState(false)
+  const [loginPassword, setLoginPassword] = useState('')
   const [selectedCompany, setSelectedCompany] = useState('')
 
   const companies = useMemo(
@@ -174,8 +187,41 @@ export default function InvoicesList() {
     XLSX.writeFile(workbook, 'expenses.xlsx')
   }
 
+  function tryLogin() {
+    if (loginPassword === ADMIN_PASSWORD) {
+      onAdminLogin()
+      setLoginOpen(false)
+      setLoginPassword('')
+    }
+  }
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+      <Dialog open={loginOpen} onClose={() => setLoginOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Вход для бухгалтера</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Пароль"
+            type="password"
+            fullWidth
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') tryLogin()
+            }}
+            autoComplete="current-password"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLoginOpen(false)}>Отмена</Button>
+          <Button variant="contained" onClick={tryLogin}>
+            Войти
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box
         sx={{
@@ -225,6 +271,25 @@ export default function InvoicesList() {
           </Button>
         </Box>
       </Box>
+
+      {!isAdmin && (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => setLoginOpen(true)}
+          sx={(theme) => ({
+            transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+            alignSelf: 'flex-start',
+            '&:hover': {
+              transform: 'scale(1.03)',
+              boxShadow: theme.shadows[6],
+            },
+            '&:active': { transform: 'scale(0.99)' },
+          })}
+        >
+          Вход для бухгалтера
+        </Button>
+      )}
 
       {filteredItems.map((item) => (
         <Card
@@ -310,7 +375,17 @@ export default function InvoicesList() {
               </Typography>
             )}
 
-            <Box
+            <Typography sx={{ mt: 2 }} component="p" variant="body1">
+              Статус:{' '}
+              {item.status === 'paid'
+                ? 'Оплачен 💳'
+                : item.status === 'done'
+                  ? 'Учтён ✓'
+                  : 'Новый'}
+            </Typography>
+
+            {isAdmin && (
+              <Box
                 sx={{
                   mt: 2,
                   p: 2,
@@ -359,16 +434,7 @@ export default function InvoicesList() {
                   />
                 </Box>
 
-                <Typography sx={{ mt: 2 }}>
-                  Статус:{' '}
-                  {item.status === 'paid'
-                    ? 'Оплачен 💳'
-                    : item.status === 'done'
-                    ? 'Учтён ✓'
-                    : 'Новый'}
-                </Typography>
-
-                <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
                   <Button
                     variant="contained"
                     onClick={() => updateStatus(item.id, 'done')}
@@ -416,6 +482,7 @@ export default function InvoicesList() {
                   </Button>
                 </Box>
               </Box>
+            )}
 
           </CardContent>
         </Card>

@@ -13,6 +13,7 @@ import {
   MenuItem
 } from '@mui/material'
 import { alpha } from '@mui/material/styles'
+import * as XLSX from 'xlsx'
 
 const openLinkButtonSx = {
   cursor: 'pointer',
@@ -52,6 +53,37 @@ type Expense = {
 
 function notifyExpensesChanged() {
   window.dispatchEvent(new Event('invoices-refresh'))
+}
+
+function expenseRowsForExport(data: Expense[]) {
+  return data.map((item) => ({
+    Дата: new Date(item.created_at).toLocaleString(),
+    Файл: item.file_name || '',
+    Категория: item.category || '',
+    Подкатегория: item.subcategory || '',
+    Компания: item.company || '',
+    Комментарий: item.comment || '',
+    'Комментарий бухгалтера': item.accountant_comment || '',
+    Статус: item.status || '',
+    Ссылка: item.file_url || '',
+  }))
+}
+
+function applySheetColumnWidths(worksheet: XLSX.WorkSheet) {
+  const ref = worksheet['!ref']
+  if (!ref) return
+  const range = XLSX.utils.decode_range(ref)
+  const cols: { wch: number }[] = []
+  for (let c = range.s.c; c <= range.e.c; c++) {
+    let maxLen = 10
+    for (let r = range.s.r; r <= range.e.r; r++) {
+      const cell = worksheet[XLSX.utils.encode_cell({ r, c })]
+      const s = cell?.v != null ? String(cell.v) : ''
+      if (s.length > maxLen) maxLen = s.length
+    }
+    cols.push({ wch: Math.min(maxLen + 2, 60) })
+  }
+  worksheet['!cols'] = cols
 }
 
 export default function InvoicesList() {
@@ -105,17 +137,7 @@ export default function InvoicesList() {
       alert('Нет данных для выгрузки')
       return
     }
-    const rows = dataToExport.map((item) => ({
-      Дата: new Date(item.created_at).toLocaleString(),
-      Файл: item.file_name || '',
-      Категория: item.category || '',
-      Подкатегория: item.subcategory || '',
-      Компания: item.company || '',
-      Комментарий: item.comment || '',
-      'Комментарий бухгалтера': item.accountant_comment || '',
-      Статус: item.status || '',
-      Ссылка: item.file_url || '',
-    }))
+    const rows = expenseRowsForExport(dataToExport)
 
     const csv = [
       Object.keys(rows[0]).join(','),
@@ -136,6 +158,19 @@ export default function InvoicesList() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
+  }
+
+  function handleExportExcel() {
+    if (!dataToExport || dataToExport.length === 0) {
+      alert('Нет данных для выгрузки')
+      return
+    }
+    const rows = expenseRowsForExport(dataToExport)
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    applySheetColumnWidths(worksheet)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Счета')
+    XLSX.writeFile(workbook, 'expenses.xlsx')
   }
 
   return (
@@ -178,6 +213,9 @@ export default function InvoicesList() {
           </FormControl>
           <Button variant="outlined" onClick={handleExport}>
             📥 Скачать CSV
+          </Button>
+          <Button variant="outlined" onClick={handleExportExcel}>
+            📥 Скачать Excel
           </Button>
         </Box>
       </Box>

@@ -72,6 +72,15 @@ create table if not exists public.expenses (
 alter table public.expenses add column if not exists file_name text;
 ```
 
+Если нет поля `status` (для подсветки «новых» и вкладки «Счета»), выполните в репозитории `sql/add_status_to_expenses.sql` или вручную:
+
+```sql
+alter table public.expenses
+  add column if not exists status text default 'new';
+```
+
+Вставка из **Telegram-бота** должна задавать `status: 'new'` — см. `docs/TELEGRAM_BOT.md`.
+
 Опционально, если используете комментарий бухгалтера из UI:
 
 ```sql

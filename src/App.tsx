@@ -38,6 +38,7 @@ function App() {
     return saved === 'dark' ? 'dark' : 'light'
   })
 
+  /** Наличие счетов со status === 'new' (сервер); на вкладке «Счета» дублируется через onHasNewChange из списка */
   const refreshNewInvoicesFlag = useCallback(async () => {
     const { count, error } = await supabase
       .from('expenses')
@@ -194,6 +195,7 @@ function App() {
                 setIsAdmin(true)
               }}
               onAdminLogout={logoutAdmin}
+              onHasNewChange={setHasNewInvoices}
             />
           ) : (
             <Suspense fallback={<Typography sx={{ p: 2 }}>Загрузка…</Typography>}>

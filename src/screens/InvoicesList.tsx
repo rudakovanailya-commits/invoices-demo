@@ -52,7 +52,7 @@ type Expense = {
   comment: string | null
   accountant_comment: string | null
   company: string | null
-  status: string
+  status: string | null
   created_at: string
 }
 
@@ -98,9 +98,16 @@ type InvoicesListProps = {
   isAdmin: boolean
   onAdminLogin: () => void
   onAdminLogout: () => void
+  /** Синхронизирует с App индикатор «есть новые» (тот же смысл, что items.some(i => i.status === 'new')) */
+  onHasNewChange?: (hasNew: boolean) => void
 }
 
-export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: InvoicesListProps) {
+export default function InvoicesList({
+  isAdmin,
+  onAdminLogin,
+  onAdminLogout,
+  onHasNewChange,
+}: InvoicesListProps) {
   const [items, setItems] = useState<Expense[]>([])
   const [loginOpen, setLoginOpen] = useState(false)
   const [loginPassword, setLoginPassword] = useState('')
@@ -119,6 +126,15 @@ export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: I
     [items, selectedCompany]
   )
 
+  const hasNew = useMemo(
+    () => items.some((i) => i.status === 'new'),
+    [items]
+  )
+
+  useEffect(() => {
+    onHasNewChange?.(hasNew)
+  }, [hasNew, onHasNewChange])
+
   useEffect(() => {
     loadData()
   }, [])
@@ -129,12 +145,12 @@ export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: I
       .select('*')
       .order('created_at', { ascending: false })
 
-    // Временно: в Console смотрите EXPENSES DATA — в каждом объекте должно быть поле status
-    // eslint-disable-next-line no-console
-    console.log('EXPENSES DATA:', data)
     if (error) {
-      // eslint-disable-next-line no-console
-      console.log('EXPENSES ERROR:', error)
+      if (import.meta.env.DEV) {
+        // eslint-disable-next-line no-console
+        console.error('expenses load:', error)
+      }
+      return
     }
 
     if (data) setItems(data)
@@ -407,12 +423,7 @@ export default function InvoicesList({ isAdmin, onAdminLogin, onAdminLogout }: I
             )}
 
             <Typography sx={{ mt: 2 }} component="p" variant="body1">
-              Статус:{' '}
-              {item.status === 'paid'
-                ? 'Оплачен 💳'
-                : item.status === 'done'
-                  ? 'Учтён ✓'
-                  : 'Новый'}
+              Статус: {item.status === 'new' ? 'Новый' : item.status ?? '—'}
             </Typography>
 
             {isAdmin && (

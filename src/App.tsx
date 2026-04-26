@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   AppBar,
-  Badge,
   BottomNavigation,
   BottomNavigationAction,
   Box,
@@ -242,25 +241,13 @@ function App() {
               label="Счета"
               value="list"
               icon={
-                <Badge
-                  color="error"
-                  variant="dot"
-                  overlap="circular"
-                  invisible={!hasNewInvoices}
-                  sx={(theme) => ({
-                    '& .MuiBadge-badge': {
-                      minWidth: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      ...(theme.palette.mode === 'dark' && {
-                        bgcolor: 'error.light',
-                        boxShadow: `0 0 0 2px ${theme.palette.background.paper}, 0 0 8px ${alpha(theme.palette.error.light, 0.9)}`,
-                      }),
-                    },
-                  })}
+                <Box
+                  component="span"
+                  sx={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
                 >
                   <ListAltIcon color={hasNewInvoices ? 'warning' : 'inherit'} />
-                </Badge>
+                  {hasNewInvoices && <span className="dot" aria-hidden />}
+                </Box>
               }
             />
             {isAdmin && (

@@ -13,3 +13,14 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Красная точка на иконке «Счета» при наличии новых счетов (status === 'new') */
+.dot {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: red;
+  border-radius: 50%;
+}

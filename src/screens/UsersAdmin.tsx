@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import {
+  Alert,
   Box,
   Button,
   Paper,
@@ -23,15 +24,18 @@ type User = {
 
 export default function UsersAdmin() {
   const [users, setUsers] = useState<User[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   const loadUsers = useCallback(async () => {
+    setLoadError(null)
     const { data, error } = await supabase
       .from('users')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('id', { ascending: false })
 
     if (error) {
       console.error(error)
+      setLoadError(error.message)
       return
     }
     if (data) setUsers(data as User[])
@@ -49,6 +53,12 @@ export default function UsersAdmin() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       <Typography variant="h6">Пользователи</Typography>
+
+      {loadError && (
+        <Alert severity="error" onClose={() => setLoadError(null)}>
+          {loadError} (проверьте таблицу <code>users</code> и политики RLS в Supabase)
+        </Alert>
+      )}
 
       <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
         <Table size="small">

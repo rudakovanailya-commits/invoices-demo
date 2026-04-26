@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AppBar,
   Badge,
@@ -20,8 +20,10 @@ import LightModeIcon from '@mui/icons-material/LightMode'
 
 import SubmitInvoice from './screens/SubmitInvoice'
 import InvoicesList from './screens/InvoicesList'
-import UsersAdmin from './screens/UsersAdmin'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { supabase } from './lib/supabaseClient'
+
+const UsersAdmin = lazy(() => import('./screens/UsersAdmin'))
 
 type TabKey = 'submit' | 'list' | 'users'
 
@@ -148,13 +150,17 @@ function App() {
       </AppBar>
 
       <Container maxWidth="sm" sx={{ py: 2, pb: 10 }}>
-        {tab === 'submit' ? (
-          <SubmitInvoice />
-        ) : tab === 'list' ? (
-          <InvoicesList />
-        ) : (
-          <UsersAdmin />
-        )}
+        <ErrorBoundary>
+          {tab === 'submit' ? (
+            <SubmitInvoice />
+          ) : tab === 'list' ? (
+            <InvoicesList />
+          ) : (
+            <Suspense fallback={<Typography sx={{ p: 2 }}>Загрузка…</Typography>}>
+              <UsersAdmin />
+            </Suspense>
+          )}
+        </ErrorBoundary>
       </Container>
 
       <Box

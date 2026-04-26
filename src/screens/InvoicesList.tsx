@@ -69,7 +69,7 @@ function expenseRowsForExport(data: Expense[]) {
     Компания: item.company || '',
     Комментарий: item.comment || '',
     'Комментарий бухгалтера': item.accountant_comment || '',
-    Статус: item.status || '',
+    Статус: expenseStatusLabel(item.status),
     Ссылка: item.file_url || '',
   }))
 }
@@ -93,6 +93,19 @@ function applySheetColumnWidths(worksheet: WorkSheet, xlsx: typeof import('xlsx'
 }
 
 const ADMIN_PASSWORD = '1234'
+
+/** Подписи в UI; значения в БД не меняем (new, in_progress, done, …). */
+const statusMap: Record<string, string> = {
+  new: 'Новый',
+  in_progress: 'В работе',
+  done: 'Завершён',
+  paid: 'Оплачён',
+}
+
+function expenseStatusLabel(status: string | null) {
+  if (status == null) return '—'
+  return statusMap[status] || status
+}
 
 type InvoicesListProps = {
   isAdmin: boolean
@@ -423,7 +436,20 @@ export default function InvoicesList({
             )}
 
             <Typography sx={{ mt: 2 }} component="p" variant="body1">
-              Статус: {item.status === 'new' ? 'Новый' : item.status ?? '—'}
+              Статус:{' '}
+              <Box
+                component="span"
+                sx={(t) => ({
+                  fontWeight: 600,
+                  ...(item.status === 'new' && { color: t.palette.info.main }),
+                  ...(item.status === 'in_progress' && { color: t.palette.warning.main }),
+                  ...((item.status === 'done' || item.status === 'paid') && {
+                    color: t.palette.success.main,
+                  }),
+                })}
+              >
+                {statusMap[item.status ?? ''] || item.status || '—'}
+              </Box>
             </Typography>
 
             {isAdmin && (

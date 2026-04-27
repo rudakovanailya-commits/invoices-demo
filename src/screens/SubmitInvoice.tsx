@@ -39,8 +39,10 @@ export default function SubmitInvoice() {
 
       if (dupError) throw dupError
       if (duplicate?.length) {
-        alert('Такой счет уже загружен')
-        return
+        const confirmUpload = confirm('Похожий счет уже есть. Загрузить еще раз?')
+        if (!confirmUpload) {
+          return
+        }
       }
 
       const filePath = `${Date.now()}_${crypto.randomUUID()}${fileExtension(file.name)}`

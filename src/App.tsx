@@ -156,10 +156,54 @@ function App() {
       <CssBaseline />
 
       <AppBar position="sticky" color="default" elevation={0}>
-        <Toolbar>
-          <Typography variant="h6" sx={{ flex: 1, fontWeight: 800 }}>
-            Учет входящих счетов
-          </Typography>
+        <Toolbar sx={{ gap: 1, minHeight: { xs: 52, sm: 56 }, py: 0.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.25,
+              flex: 1,
+              minWidth: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src={`${import.meta.env.BASE_URL}schetovod-icon.png`}
+              alt="Счетовод"
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '11px',
+                flexShrink: 0,
+                objectFit: 'cover',
+                display: 'block',
+              }}
+            />
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  fontSize: { xs: '1rem', sm: '1.2rem' },
+                }}
+              >
+                Счетовод
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: { xs: '0.65rem', sm: '0.8rem' },
+                  lineHeight: 1.25,
+                  mt: 0.125,
+                }}
+              >
+                ваш помощник по счетам
+              </Typography>
+            </Box>
+          </Box>
           {isAdmin && (
             <Button color="inherit" onClick={logoutAdmin} sx={{ mr: 0.5 }}>
               Выйти

@@ -40,7 +40,6 @@ export default function SubmitInvoice() {
       if (dupError) throw dupError
       if (duplicate?.length) {
         alert('Такой счет уже загружен')
-        setLoading(false)
         return
       }
 
@@ -52,28 +51,39 @@ export default function SubmitInvoice() {
 
       if (uploadError) throw uploadError
 
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('invoices')
         .getPublicUrl(filePath)
+      const file_url = urlData.publicUrl
+      const file_name = file.name
 
       const parsed = Number(amount)
       const safeAmount =
         amount.trim() !== '' && Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
       const safeCategory = category.trim() || 'Прочее'
 
-      // Новый счёт всегда 'new' (подсветка вкладки «Счета», count по status) — не in_progress
-      const { error: insertError } = await supabase
+      // Веб-форма без auth: subcategory / user_id / user_name — null (как в боте с явными полями)
+      const { data, error } = await supabase
         .from('expenses')
         .insert({
-          file_url: data.publicUrl,
-          file_name: file.name,
+          file_url,
+          file_name,
           amount: safeAmount,
           category: safeCategory,
+          subcategory: null,
           comment: comment.trim() || null,
+          user_id: null,
+          user_name: null,
           status: 'new',
         })
+        .select()
 
-      if (insertError) throw insertError
+      if (error) {
+        console.error('INSERT ERROR:', error)
+        alert('Ошибка сохранения счета')
+        return
+      }
+      console.log('INSERT OK:', data)
 
       window.dispatchEvent(new Event('invoices-refresh'))
 
@@ -88,9 +98,9 @@ export default function SubmitInvoice() {
     } catch (e: any) {
       const parts = [e?.message, e?.details, e?.hint].filter(Boolean)
       alert('Ошибка: ' + (parts.length ? parts.join(' — ') : 'Неизвестная ошибка'))
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const textFieldFocusSx = (theme: { palette: { primary: { main: string } } }) => ({
